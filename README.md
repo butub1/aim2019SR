@@ -6,7 +6,7 @@
 * pytorch 1.1 
 
 ## inference
-
+ change the data_dir and output_dir in `eval.py/main()` function with your own dirs.
 ```shell
 python3 eval.py
 ```
