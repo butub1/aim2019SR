@@ -11,7 +11,7 @@ def main():
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
     model_path = '/mnt/lustre/niuyazhe/code/github/RCAN/RCAN_TrainCode/experiment_aim/PRUNE2/model/model_26.pt'
-    cfg = [6, 39, 45, 43, 44, 50, 47, 54, 50, 37]
+    cfg = [12, 43, 49, 44, 43, 57, 50, 52, 51, 46]
     model = MSRResNetSlim(cfg=cfg)
     new_state_dict = {k[7:]: v for k, v in torch.load(model_path).items()}
     model.load_state_dict(new_state_dict)
