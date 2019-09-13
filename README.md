@@ -16,4 +16,10 @@ python3 eval.py
 ```shell
 python3 test_velocity --model_dir <your model_dir>
 ```
-
+## model and pruned channel config
+ - model_41.pt
+ - prune.txt
+## model performence
+ - PSNR 28.89
+ - param 818432
+ - time 0.083 (test for 0001x4.png)

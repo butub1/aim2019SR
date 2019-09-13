@@ -3,6 +3,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.init as init
+import argparse
+import cv2
+
+
+def make_model(args):
+    print(args.res_block_num)
+    return MSRResNet_v1(nb=int(args.res_block_num), activation=args.feature_act, use_y=args.use_y, res_location=args.res_location, bias=args.use_bias,
+                        interp_type=args.interp_type, use_reflect_pad=args.use_reflect_pad, use_dilation=args.use_dilation, use_bn=args.use_bn, cfg=args.block_cfg)
 
 
 class PadConv2d(nn.Module):
@@ -32,8 +40,7 @@ class h_swish(nn.Module):
         self.inplace = inplace
 
     def forward(self, x):
-        return x.mul_(F.relu6(x.add_(3), self.inplace)).div_(6)
-        #return x * (F.relu6(x+3, self.inplace)/6)
+        return x * (F.relu6(x+3, self.inplace)/6)
 
 
 class h_sigmoid(nn.Module):
@@ -42,8 +49,7 @@ class h_sigmoid(nn.Module):
         self.inplace = inplace
 
     def forward(self, x):
-        return F.relu6(x.add_(3), self.inplace).div_(6)
-        #return F.relu6(x+3, self.inplace)/6
+        return F.relu6(x+3, self.inplace)/6
 
 
 def initialize_weights(net_l, scale=1):
@@ -191,6 +197,7 @@ class SE_ResidualBlock_noBN(nn.Module):
     def forward(self, x):
         identity = x
         out = self.conv1(x)
+        # defalut: out = F.relu(self.conv1(x), inplace=True)
         if self.use_bn:
             out = self.naive_bn(out)
         out = self.activation(out)
@@ -200,12 +207,13 @@ class SE_ResidualBlock_noBN(nn.Module):
 
 
 class MSRResNetSlim(nn.Module):
-    ''' Slim SRResNet'''
+    ''' modified SRResNet'''
     ''' benchmark: nf = 64, nb = 16, activation = relu , mode  = benchmark'''
 
     def __init__(self, in_nc=3, out_nc=3, nf=64, nb=10, upscale=4, activation='h-swish', mode='se', use_y=False, res_location='last', bias=False,
                  interp_type='bicubic', use_reflect_pad=True, use_dilation=False, cfg=None, use_bn=False):
         super(MSRResNetSlim, self).__init__()
+        print('interp_type:{}'.format(interp_type))
         self.use_y = use_y
         self.res_location = res_location
         self.interp_type = interp_type
@@ -288,3 +296,30 @@ class MSRResNetSlim(nn.Module):
             out = torch.cat([out, color], dim=1)
             out = self.ypbpr2rgb_transform(out)
         return out
+
+
+def test():
+    model1 = MSRResNet_v1(use_y=True, res_location='mid', use_dilation=True, bias=False, use_reflect_pad=True, interp_type='bicubic')
+    model2 = MSRResNet_v1(use_y=True, res_location='last')
+    model3 = MSRResNet_v1(use_y=False, res_location='mid')
+    model4 = MSRResNet_v1(use_y=False, res_location='last')
+    data = torch.randn(4, 3, 32, 32)
+    with torch.no_grad():
+        out1 = model1(data)
+        print(out1.shape)
+        out2 = model2(data)
+        print(out2.shape)
+        out3 = model3(data)
+        print(out3.shape)
+        out4 = model4(data)
+        print(out4.shape)
+    print(model1)
+
+def test2():
+    cfg = [10]
+    model = MSRResNet_v1(use_y=False, res_location='last', use_dilation=True, bias=False, use_reflect_pad=True, cfg=cfg)
+    print(model)
+
+
+if __name__ == '__main__':
+    test()
